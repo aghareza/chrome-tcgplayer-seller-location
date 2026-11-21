@@ -28,17 +28,21 @@
   }
 
   async function loadListings() {
-    if (listings || fetchInFlight) return listings;
+    if (listings) return listings;
+    if (fetchInFlight) return fetchInFlight;
     const productId = getProductId();
     if (!productId) return null;
     // Back off for a bit after a failure so repeated scans don't re-hit the API.
     if (failedAt && Date.now() - failedAt < 15000) return null;
     fetchInFlight = TCG.fetchListings(productId)
       .then(result => {
+        // Drop results for a product the tab has already navigated away from.
+        if (getProductId() !== productId) return null;
         listings = result;
         return listings;
       })
       .catch(error => {
+        if (getProductId() !== productId) return null;
         listings = null;
         failedAt = Date.now();
         console.warn('[tcg-seller-location]', error.message ?? error);
@@ -81,6 +85,8 @@
       if (!(el instanceof Element)) continue;
       if (el.classList.contains(BADGE_CLASS)) continue;
       if (el.getAttribute(MARKER_ATTR)) continue;
+      // An ancestor already got a badge for this name (e.g. <a><span>Name</span></a>).
+      if (el.parentElement?.closest(`[${MARKER_ATTR}]`)) continue;
       const text = normalize(el.textContent);
       if (!text || text.length > MAX_TEXT_LENGTH) continue;
       // Skip large containers: a seller name element has few or no children.
@@ -127,6 +133,7 @@
     if (window.location.href !== lastUrl) {
       lastUrl = window.location.href;
       listings = null;
+      failedAt = 0;
       removeBadges();
       scheduleScan(0);
       return;

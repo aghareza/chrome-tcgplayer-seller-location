@@ -9,13 +9,18 @@ TCGPlayer loads its listings from its own internal API,
 `POST https://mp-search-api.tcgplayer.com/v1/product/{productId}/listings`.
 That endpoint returns each listing with a `sellerAddress` (city, territory/state, country).
 On `/product/*` pages, a content script reads the product id from the URL, calls that endpoint
-with the same filters the site uses (live sellers, quantity ≥ 1), and matches each seller name
+with the same filters and sort the site uses (live sellers, quantity ≥ 1, cheapest price + shipping
+first), pages through up to 200 listings, and matches each seller name
 already present in the page (the spotlight seller and every listing row) with a small
 `📍 City, State` badge.
 
+The content script is injected on every `www.tcgplayer.com` page, because the site is a
+single-page app: clicking into a product from search changes the URL without a page load, so a
+`/product/*`-only match would never run. It does nothing until the URL is a product page.
+
 The fetch happens from the page itself (same origin, same user-agent as the site), so it behaves
-like the site's own requests; `host_permissions` for the API host lets the content script issue the
-cross-origin request.
+like the site's own requests. It works because the API allows CORS from `www.tcgplayer.com`;
+in Manifest V3, `host_permissions` does not lift CORS for content scripts.
 
 ## Install (unpacked)
 
@@ -30,6 +35,7 @@ Click the extension icon to turn the badges on or off.
 ## Notes
 
 - Some listings in the API response have no `sellerAddress` — those sellers simply get no badge.
+- Only the first 200 listings (by price + shipping) are fetched; sellers beyond that get no badge.
 - The API shape is an internal (undocumented) contract. If TCGPlayer changes it, the badge may
   stop appearing; the extension fails quietly (no badges, no errors in the page).
 - The extension reads no personal data; it only queries the same listings endpoint the page
@@ -39,4 +45,5 @@ Click the extension icon to turn the badges on or off.
 
 ```sh
 npm run check   # syntax + manifest validation
+npm test        # data-layer tests (node:test)
 ```
