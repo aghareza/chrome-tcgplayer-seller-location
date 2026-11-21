@@ -1,0 +1,41 @@
+{
+  "manifest_version": 3,
+  "name": "TCGPlayer Seller Location",
+  "version": "1.0.0",
+  "description": "Shows the city and state of each seller next to their name in the listings on a TCGPlayer product page.",
+  "action": {
+    "default_title": "Toggle seller location",
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.tcgplayer.com/product/*"
+      ],
+      "js": [
+        "listings.js",
+        "content.js"
+      ],
+      "css": [
+        "content.css"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "host_permissions": [
+    "https://mp-search-api.tcgplayer.com/*"
+  ],
+  "permissions": [
+    "storage"
+  ]
+}

@@ -1,0 +1,17 @@
+.tcg-seller-loc {
+  display: inline-block;
+  margin: 0 6px;
+  padding: 0 7px;
+  font-size: 0.72rem;
+  font-weight: 500;
+  line-height: 1.5;
+  letter-spacing: 0.2px;
+  color: #37543f;
+  background-color: #edf4ee;
+  border: 1px solid #cddccb;
+  border-radius: 999px;
+  vertical-align: middle;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
