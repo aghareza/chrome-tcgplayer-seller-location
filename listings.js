@@ -38,6 +38,11 @@
     };
   }
 
+  function isCalifornia(state) {
+    const value = String(state ?? '').trim().toLowerCase();
+    return value === 'ca' || value === 'california';
+  }
+
   function normalizeListing(listing) {
     if (!listing || !listing.sellerName) return null;
     return {
@@ -113,5 +118,5 @@
     return { results: block.results, totalResults: block.totalResults };
   }
 
-  return { buildRequestBody, normalizeListing, fetchListings, LISTINGS_ENDPOINT };
+  return { buildRequestBody, normalizeListing, fetchListings, isCalifornia, LISTINGS_ENDPOINT };
 });

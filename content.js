@@ -2,6 +2,7 @@
   'use strict';
 
   const BADGE_CLASS = 'tcg-seller-loc';
+  const CALIFORNIA_CLASS = 'tcg-seller-loc--ca';
   const MARKER_ATTR = 'data-tcg-seller-loc-done';
   const MAX_TEXT_LENGTH = 80;
   const SCAN_DEBOUNCE_MS = 250;
@@ -53,22 +54,23 @@
   }
 
   function buildLookup() {
-    const labelsBySeller = new Map();
+    const locationsBySeller = new Map();
     for (const listing of listings ?? []) {
       const key = normalize(listing.sellerName);
       if (!key) continue;
       const label = locationLabel(listing);
       // Prefer the first listing that has an address for this seller.
-      if (label && !labelsBySeller.get(key)) {
-        labelsBySeller.set(key, label);
+      if (label && !locationsBySeller.get(key)) {
+        locationsBySeller.set(key, { label, california: TCG.isCalifornia(listing.state) });
       }
     }
-    return labelsBySeller;
+    return locationsBySeller;
   }
 
-  function makeBadge(label) {
+  function makeBadge({ label, california }) {
     const badge = document.createElement('span');
     badge.className = BADGE_CLASS;
+    if (california) badge.classList.add(CALIFORNIA_CLASS);
     badge.textContent = `📍 ${label}`;
     badge.title = `Seller location: ${label}`;
     badge.setAttribute('aria-label', `Seller location: ${label}`);
@@ -91,9 +93,9 @@
       if (!text || text.length > MAX_TEXT_LENGTH) continue;
       // Skip large containers: a seller name element has few or no children.
       if (el.children.length > 3) continue;
-      const label = lookup.get(text);
-      if (!label) continue;
-      el.insertAdjacentElement('afterend', makeBadge(label));
+      const location = lookup.get(text);
+      if (!location) continue;
+      el.insertAdjacentElement('afterend', makeBadge(location));
       el.setAttribute(MARKER_ATTR, '1');
     }
   }

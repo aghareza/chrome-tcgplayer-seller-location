@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { buildRequestBody, fetchListings } = require('../listings.js');
+const { buildRequestBody, fetchListings, isCalifornia } = require('../listings.js');
 
 function listing(i, address) {
   return { sellerName: `Seller ${i}`, sellerKey: `k${i}`, listingId: i, sellerAddress: address };
@@ -58,4 +58,11 @@ test('reuses the shared cache across calls', async () => {
 test('rejects non-OK responses', async () => {
   const fetchImpl = async () => ({ ok: false, status: 403 });
   await assert.rejects(fetchListings('1', { fetchImpl, cache: new Map() }), /HTTP 403/);
+});
+
+test('recognizes California by code or name', () => {
+  assert.equal(isCalifornia('CA'), true);
+  assert.equal(isCalifornia(' california '), true);
+  assert.equal(isCalifornia('NC'), false);
+  assert.equal(isCalifornia(undefined), false);
 });

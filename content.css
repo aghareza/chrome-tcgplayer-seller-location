@@ -15,3 +15,10 @@
   pointer-events: none;
 }
 
+/* California sellers stand out in amber. */
+.tcg-seller-loc--ca {
+  color: #7a3e00;
+  background-color: #ffe7c2;
+  border-color: #f5a623;
+  font-weight: 600;
+}
