@@ -8,6 +8,8 @@
   }
 })(typeof self !== 'undefined' ? self : this, function () {
   const LISTINGS_ENDPOINT = 'https://mp-search-api.tcgplayer.com/v1/product/{id}/listings?mpfev=5762';
+  // Seller profile used by the seller page; has the address many listings leave out.
+  const SELLER_ENDPOINT = 'https://infinite-api.tcgplayer.com/sm/seller/{key}';
 
   const DEFAULTS = {
     cacheTtlMs: 10 * 60 * 1000,
@@ -15,10 +17,12 @@
     // Listings are fetched in pages of `pageSize` until `maxResults` or the end of the results.
     pageSize: 50,
     maxResults: 200,
+    sellerCacheTtlMs: 60 * 60 * 1000,
   };
 
   // Shared across calls so revisiting a product within the TTL skips the network.
   const defaultCache = new Map();
+  const defaultSellerCache = new Map();
 
   function buildRequestBody({ from = 0, size = DEFAULTS.pageSize } = {}) {
     // Mirrors the request the site itself makes to the listings endpoint, including its
@@ -97,6 +101,52 @@
     }
   }
 
+  // Returns { city, state, country } from the seller's profile, or null if it has no address.
+  async function fetchSellerAddress(sellerKey, options = {}) {
+    const {
+      cacheTtlMs = DEFAULTS.sellerCacheTtlMs,
+      timeoutMs = DEFAULTS.timeoutMs,
+      fetchImpl,
+      cache = defaultSellerCache,
+    } = options;
+
+    if (!/^[a-z0-9]+$/i.test(String(sellerKey))) {
+      throw new Error('Invalid seller key');
+    }
+
+    const cached = cache.get(sellerKey);
+    if (cached && Date.now() - cached.ts < cacheTtlMs) {
+      return cached.data;
+    }
+
+    const fetcher = fetchImpl || fetch;
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const url = SELLER_ENDPOINT.replace('{key}', encodeURIComponent(sellerKey));
+      const response = await fetcher(url, {
+        method: 'GET',
+        headers: { Accept: 'application/json, text/plain, */*' },
+        signal: controller.signal,
+      });
+      if (!response.ok) {
+        throw new Error(`Seller request failed (HTTP ${response.status})`);
+      }
+      const address = normalizeSellerAddress(await response.json());
+      cache.set(sellerKey, { ts: Date.now(), data: address });
+      return address;
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  function normalizeSellerAddress(seller) {
+    const city = seller?.addressCity || undefined;
+    const state = seller?.addressTerritory || undefined;
+    const country = seller?.addressCountryCode || undefined;
+    return city || state ? { city, state, country } : null;
+  }
+
   async function fetchPage(fetcher, url, { from, size }, signal) {
     const response = await fetcher(url, {
       method: 'POST',
@@ -118,5 +168,13 @@
     return { results: block.results, totalResults: block.totalResults };
   }
 
-  return { buildRequestBody, normalizeListing, fetchListings, isCalifornia, LISTINGS_ENDPOINT };
+  return {
+    buildRequestBody,
+    normalizeListing,
+    fetchListings,
+    fetchSellerAddress,
+    isCalifornia,
+    LISTINGS_ENDPOINT,
+    SELLER_ENDPOINT,
+  };
 });

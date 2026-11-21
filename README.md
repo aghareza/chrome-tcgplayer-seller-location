@@ -34,7 +34,11 @@ Click the extension icon to turn the badges on or off.
 
 ## Notes
 
-- Some listings in the API response have no `sellerAddress` — those sellers simply get no badge.
+- Many listings in the API response have no `sellerAddress`. For those sellers, if their name is
+  shown on the page, the extension looks up the address from the seller profile the seller page
+  uses, `GET https://infinite-api.tcgplayer.com/sm/seller/{sellerKey}` (`addressCity`,
+  `addressTerritory`), at most 3 at a time and once per seller per page load. Sellers whose
+  profile has no address get no badge.
 - Only the first 200 listings (by price + shipping) are fetched; sellers beyond that get no badge.
 - The API shape is an internal (undocumented) contract. If TCGPlayer changes it, the badge may
   stop appearing; the extension fails quietly (no badges, no errors in the page).
