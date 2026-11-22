@@ -6,6 +6,7 @@
   const MARKER_ATTR = 'data-tcg-seller-loc-done';
   const MAX_TEXT_LENGTH = 80;
   const SCAN_DEBOUNCE_MS = 250;
+  const SELLER_FETCH_CONCURRENCY = 3;
 
   const TCG = window.TCG_SELLER_LOC;
   if (!TCG) return;
@@ -15,6 +16,13 @@
   let enabled = true;
   let scanScheduled = false;
   let failedAt = 0;
+
+  // Fallback addresses for sellers whose listings have none, keyed by sellerKey.
+  // null means the seller has no address (or the lookup failed); not retried until reload.
+  const sellerAddresses = new Map();
+  const requestedSellers = new Set();
+  const sellerQueue = [];
+  let sellerFetchesActive = 0;
 
   const normalize = text => String(text ?? '').toLowerCase().replace(/\s+/g, ' ').trim();
 
@@ -54,17 +62,47 @@
   }
 
   function buildLookup() {
-    const locationsBySeller = new Map();
+    const sellersByName = new Map();
     for (const listing of listings ?? []) {
       const key = normalize(listing.sellerName);
       if (!key) continue;
-      const label = locationLabel(listing);
       // Prefer the first listing that has an address for this seller.
-      if (label && !locationsBySeller.get(key)) {
-        locationsBySeller.set(key, { label, california: TCG.isCalifornia(listing.state) });
-      }
+      if (sellersByName.get(key)?.label) continue;
+      const address = listing.city || listing.state ? listing : sellerAddresses.get(listing.sellerKey);
+      sellersByName.set(key, {
+        sellerKey: listing.sellerKey,
+        label: address ? locationLabel(address) : '',
+        california: address ? TCG.isCalifornia(address.state) : false,
+      });
     }
-    return locationsBySeller;
+    return sellersByName;
+  }
+
+  function requestSellerAddress(sellerKey) {
+    if (!sellerKey || requestedSellers.has(sellerKey)) return;
+    requestedSellers.add(sellerKey);
+    sellerQueue.push(sellerKey);
+    pumpSellerQueue();
+  }
+
+  function pumpSellerQueue() {
+    while (sellerFetchesActive < SELLER_FETCH_CONCURRENCY && sellerQueue.length) {
+      const sellerKey = sellerQueue.shift();
+      sellerFetchesActive++;
+      TCG.fetchSellerAddress(sellerKey)
+        .then(address => {
+          sellerAddresses.set(sellerKey, address);
+          if (address) scheduleScan(0);
+        })
+        .catch(error => {
+          sellerAddresses.set(sellerKey, null);
+          console.warn('[tcg-seller-location]', error.message ?? error);
+        })
+        .finally(() => {
+          sellerFetchesActive--;
+          pumpSellerQueue();
+        });
+    }
   }
 
   function makeBadge({ label, california }) {
@@ -93,9 +131,14 @@
       if (!text || text.length > MAX_TEXT_LENGTH) continue;
       // Skip large containers: a seller name element has few or no children.
       if (el.children.length > 3) continue;
-      const location = lookup.get(text);
-      if (!location) continue;
-      el.insertAdjacentElement('afterend', makeBadge(location));
+      const seller = lookup.get(text);
+      if (!seller) continue;
+      if (!seller.label) {
+        // Only look up sellers actually shown on the page; the next scan adds the badge.
+        requestSellerAddress(seller.sellerKey);
+        continue;
+      }
+      el.insertAdjacentElement('afterend', makeBadge(seller));
       el.setAttribute(MARKER_ATTR, '1');
     }
   }
