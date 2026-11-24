@@ -32,9 +32,6 @@
       "run_at": "document_idle"
     }
   ],
-  "host_permissions": [
-    "https://mp-search-api.tcgplayer.com/*"
-  ],
   "permissions": [
     "storage"
   ]
