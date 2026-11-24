@@ -1,7 +1,11 @@
 # TCGPlayer Seller Location
 
 A Chrome extension that shows the **city and state** of every seller next to their name in the
-listings on any [TCGPlayer](https://www.tcgplayer.com) product page.
+listings on any [TCGPlayer](https://www.tcgplayer.com) product page. Sellers in California get
+an amber badge so they stand out.
+
+> This is an unofficial, personal project. It is not affiliated with or endorsed by TCGPlayer, and
+> it relies on TCGPlayer's undocumented internal APIs, so it may stop working at any time.
 
 ## How it works
 
@@ -24,13 +28,18 @@ in Manifest V3, `host_permissions` does not lift CORS for content scripts.
 
 ## Install (unpacked)
 
-1. Open `chrome://extensions`
-2. Turn on **Developer mode** (top right)
-3. Click **Load unpacked** and select this folder
-4. Visit any product page with live listings, e.g.
+1. Get the code: on GitHub click **Code → Download ZIP** and unzip it, or
+   `git clone https://github.com/aghareza/chrome-tcgplayer-seller-location.git`
+2. Open `chrome://extensions`
+3. Turn on **Developer mode** (top right)
+4. Click **Load unpacked** and select the folder you downloaded (the one containing `manifest.json`)
+5. Visit any product page with live listings, e.g.
    `https://www.tcgplayer.com/product/84188/pokemon-ex-power-keepers-charizard`
 
 Click the extension icon to turn the badges on or off.
+
+To update, download the ZIP again (or `git pull`), then click the reload icon on the extension's
+card in `chrome://extensions`.
 
 ## Notes
 
@@ -42,8 +51,8 @@ Click the extension icon to turn the badges on or off.
 - Only the first 200 listings (by price + shipping) are fetched; sellers beyond that get no badge.
 - The API shape is an internal (undocumented) contract. If TCGPlayer changes it, the badge may
   stop appearing; the extension fails quietly (no badges, no errors in the page).
-- The extension reads no personal data; it only queries the same listings endpoint the page
-  itself uses, and only for the product loaded in the tab.
+- The extension reads no personal data; it only queries the listings and seller profile endpoints
+  the site itself uses, and only for the product loaded in the tab.
 
 ## Development
 
@@ -51,3 +60,7 @@ Click the extension icon to turn the badges on or off.
 npm run check   # syntax + manifest validation
 npm test        # data-layer tests (node:test)
 ```
+
+## License
+
+[MIT](LICENSE)

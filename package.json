@@ -2,6 +2,7 @@
   "name": "tcgplayer-seller-location",
   "version": "1.0.0",
   "private": true,
+  "license": "MIT",
   "description": "Chrome extension that shows each seller's city and state next to their name in the listings on TCGPlayer product pages.",
   "scripts": {
     "check": "node --check listings.js && node --check content.js && node --check popup.js && node -e \"const fs=require('fs');JSON.parse(fs.readFileSync('manifest.json','utf8'));console.log('manifest.json valid')\"",
