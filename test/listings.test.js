@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { buildRequestBody, fetchListings, fetchSellerAddress, isCalifornia } = require('../src/lib/listings.js');
+const { buildRequestBody, fetchListings, fetchSellerAddress, isHighlightedState, parseStateList } = require('../src/lib/listings.js');
 
 function listing(i, address) {
   return { sellerName: `Seller ${i}`, sellerKey: `k${i}`, listingId: i, sellerAddress: address };
@@ -60,11 +60,24 @@ test('rejects non-OK responses', async () => {
   await assert.rejects(fetchListings('1', { fetchImpl, cache: new Map() }), /HTTP 403/);
 });
 
-test('recognizes California by code or name', () => {
-  assert.equal(isCalifornia('CA'), true);
-  assert.equal(isCalifornia(' california '), true);
-  assert.equal(isCalifornia('NC'), false);
-  assert.equal(isCalifornia(undefined), false);
+test('matches highlighted states by code or name', () => {
+  assert.equal(isHighlightedState('CA', ['CA']), true);
+  assert.equal(isHighlightedState(' california ', ['CA']), true);
+  assert.equal(isHighlightedState('New York', ['NY', 'NJ']), true);
+  assert.equal(isHighlightedState('NC', ['CA']), false);
+  assert.equal(isHighlightedState('CA', []), false);
+  assert.equal(isHighlightedState(undefined, ['CA']), false);
+});
+
+test('parses state lists from codes and names', () => {
+  assert.deepEqual(parseStateList('CA'), { codes: ['CA'], invalid: [] });
+  assert.deepEqual(parseStateList('NY,NJ,CT'), { codes: ['NY', 'NJ', 'CT'], invalid: [] });
+  assert.deepEqual(parseStateList(' ny , nj ;ct '), { codes: ['NY', 'NJ', 'CT'], invalid: [] });
+  assert.deepEqual(parseStateList('NY NJ CT'), { codes: ['NY', 'NJ', 'CT'], invalid: [] });
+  assert.deepEqual(parseStateList('New York, new jersey'), { codes: ['NY', 'NJ'], invalid: [] });
+  assert.deepEqual(parseStateList('CA, ca, California'), { codes: ['CA'], invalid: [] });
+  assert.deepEqual(parseStateList('CA, XX, Cali'), { codes: ['CA'], invalid: ['XX', 'Cali'] });
+  assert.deepEqual(parseStateList(''), { codes: [], invalid: [] });
 });
 
 function fakeSellerApi(profile) {
