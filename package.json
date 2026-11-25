@@ -5,7 +5,7 @@
   "license": "MIT",
   "description": "Chrome extension that shows each seller's city and state next to their name in the listings on TCGPlayer product pages.",
   "scripts": {
-    "check": "node --check listings.js && node --check content.js && node --check popup.js && node -e \"const fs=require('fs');JSON.parse(fs.readFileSync('manifest.json','utf8'));console.log('manifest.json valid')\"",
+    "check": "node --check src/lib/listings.js && node --check src/content/content.js && node --check src/popup/popup.js && node -e \"const fs=require('fs');JSON.parse(fs.readFileSync('manifest.json','utf8'));console.log('manifest.json valid')\"",
     "test": "node --test test/"
   }
 }

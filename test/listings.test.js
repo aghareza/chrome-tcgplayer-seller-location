@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { buildRequestBody, fetchListings, fetchSellerAddress, isCalifornia } = require('../listings.js');
+const { buildRequestBody, fetchListings, fetchSellerAddress, isCalifornia } = require('../src/lib/listings.js');
 
 function listing(i, address) {
   return { sellerName: `Seller ${i}`, sellerKey: `k${i}`, listingId: i, sellerAddress: address };
