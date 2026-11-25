@@ -2,7 +2,7 @@
   'use strict';
 
   const BADGE_CLASS = 'tcg-seller-loc';
-  const CALIFORNIA_CLASS = 'tcg-seller-loc--ca';
+  const HIGHLIGHT_CLASS = 'tcg-seller-loc--highlight';
   const MARKER_ATTR = 'data-tcg-seller-loc-done';
   const MAX_TEXT_LENGTH = 80;
   const SCAN_DEBOUNCE_MS = 250;
@@ -14,6 +14,7 @@
   let listings = null;
   let fetchInFlight = null;
   let enabled = true;
+  let highlightStates = TCG.DEFAULT_HIGHLIGHT_STATES;
   let scanScheduled = false;
   let failedAt = 0;
 
@@ -72,7 +73,7 @@
       sellersByName.set(key, {
         sellerKey: listing.sellerKey,
         label: address ? locationLabel(address) : '',
-        california: address ? TCG.isCalifornia(address.state) : false,
+        highlight: address ? TCG.isHighlightedState(address.state, highlightStates) : false,
       });
     }
     return sellersByName;
@@ -105,10 +106,10 @@
     }
   }
 
-  function makeBadge({ label, california }) {
+  function makeBadge({ label, highlight }) {
     const badge = document.createElement('span');
     badge.className = BADGE_CLASS;
-    if (california) badge.classList.add(CALIFORNIA_CLASS);
+    if (highlight) badge.classList.add(HIGHLIGHT_CLASS);
     badge.textContent = `📍 ${label}`;
     badge.title = `Seller location: ${label}`;
     badge.setAttribute('aria-label', `Seller location: ${label}`);
@@ -166,6 +167,11 @@
     scheduleScan(0);
   }
 
+  // Stored as an array of state codes; anything else falls back to the default.
+  function setHighlightStates(value) {
+    highlightStates = Array.isArray(value) ? value : TCG.DEFAULT_HIGHLIGHT_STATES;
+  }
+
   const observer = new MutationObserver(() => scheduleScan());
   const observe = () => {
     try { observer.observe(document.body, { childList: true, subtree: true }); } catch { /* noop */ }
@@ -186,12 +192,21 @@
     scheduleScan(SCAN_DEBOUNCE_MS);
   }, 3000);
 
-  chrome.storage.sync.get('enabled')
-    .then(data => applyEnabled(data.enabled !== false))
+  chrome.storage.sync.get(['enabled', 'highlightStates'])
+    .then(data => {
+      setHighlightStates(data.highlightStates);
+      applyEnabled(data.enabled !== false);
+    })
     .catch(() => applyEnabled(true));
 
   chrome.storage.onChanged.addListener((changes, area) => {
-    if (area !== 'sync' || !changes.enabled) return;
-    applyEnabled(changes.enabled.newValue !== false);
+    if (area !== 'sync') return;
+    if (changes.highlightStates) {
+      setHighlightStates(changes.highlightStates.newValue);
+      // Re-render so existing badges pick up the new highlight.
+      removeBadges();
+      if (enabled) scheduleScan(0);
+    }
+    if (changes.enabled) applyEnabled(changes.enabled.newValue !== false);
   });
 })();

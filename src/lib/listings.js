@@ -42,9 +42,55 @@
     };
   }
 
-  function isCalifornia(state) {
-    const value = String(state ?? '').trim().toLowerCase();
-    return value === 'ca' || value === 'california';
+  // US state (and DC) codes to names, for the highlight setting.
+  const US_STATES = {
+    AL: 'Alabama', AK: 'Alaska', AZ: 'Arizona', AR: 'Arkansas', CA: 'California',
+    CO: 'Colorado', CT: 'Connecticut', DE: 'Delaware', DC: 'District of Columbia',
+    FL: 'Florida', GA: 'Georgia', HI: 'Hawaii', ID: 'Idaho', IL: 'Illinois',
+    IN: 'Indiana', IA: 'Iowa', KS: 'Kansas', KY: 'Kentucky', LA: 'Louisiana',
+    ME: 'Maine', MD: 'Maryland', MA: 'Massachusetts', MI: 'Michigan', MN: 'Minnesota',
+    MS: 'Mississippi', MO: 'Missouri', MT: 'Montana', NE: 'Nebraska', NV: 'Nevada',
+    NH: 'New Hampshire', NJ: 'New Jersey', NM: 'New Mexico', NY: 'New York',
+    NC: 'North Carolina', ND: 'North Dakota', OH: 'Ohio', OK: 'Oklahoma', OR: 'Oregon',
+    PA: 'Pennsylvania', RI: 'Rhode Island', SC: 'South Carolina', SD: 'South Dakota',
+    TN: 'Tennessee', TX: 'Texas', UT: 'Utah', VT: 'Vermont', VA: 'Virginia',
+    WA: 'Washington', WV: 'West Virginia', WI: 'Wisconsin', WY: 'Wyoming',
+  };
+  const DEFAULT_HIGHLIGHT_STATES = ['CA'];
+
+  // Returns the two-letter code for a state code or full name ("ny", "New York"), or null.
+  function stateCode(value) {
+    const text = String(value ?? '').trim().replace(/\s+/g, ' ');
+    if (!text) return null;
+    const upper = text.toUpperCase();
+    if (US_STATES[upper]) return upper;
+    const lower = text.toLowerCase();
+    return Object.keys(US_STATES).find(code => US_STATES[code].toLowerCase() === lower) ?? null;
+  }
+
+  // Parses user input like "NY, NJ, CT" (or "NY NJ CT", or full names) into codes.
+  // Returns { codes, invalid } with codes deduplicated in input order.
+  function parseStateList(text) {
+    const codes = [];
+    const invalid = [];
+    const add = code => { if (!codes.includes(code)) codes.push(code); };
+    for (const token of String(text ?? '').split(/[,;]/)) {
+      const trimmed = token.trim();
+      if (!trimmed) continue;
+      const code = stateCode(trimmed);
+      if (code) { add(code); continue; }
+      // Not a code or name as a whole: try space-separated codes ("NY NJ CT").
+      const words = trimmed.split(/\s+/);
+      const wordCodes = words.map(stateCode);
+      if (words.length > 1 && wordCodes.every(Boolean)) wordCodes.forEach(add);
+      else invalid.push(trimmed);
+    }
+    return { codes, invalid };
+  }
+
+  function isHighlightedState(state, codes) {
+    const code = stateCode(state);
+    return Boolean(code) && Array.isArray(codes) && codes.includes(code);
   }
 
   function normalizeListing(listing) {
@@ -173,7 +219,11 @@
     normalizeListing,
     fetchListings,
     fetchSellerAddress,
-    isCalifornia,
+    isHighlightedState,
+    parseStateList,
+    stateCode,
+    US_STATES,
+    DEFAULT_HIGHLIGHT_STATES,
     LISTINGS_ENDPOINT,
     SELLER_ENDPOINT,
   };

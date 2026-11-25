@@ -10,12 +10,21 @@
   <main class="popup">
     <h1>Seller Location</h1>
     <p class="summary">City and state next to each seller on TCGPlayer product pages.</p>
-    <label class="toggle">
-      <input type="checkbox" id="enabled" checked />
-      <span class="toggle__label">Show seller locations</span>
-    </label>
+    <div class="card">
+      <label class="toggle">
+        <input type="checkbox" id="enabled" checked />
+        <span class="toggle__label">Show seller locations</span>
+      </label>
+      <div class="states">
+        <label class="states__label" for="states">Highlight states</label>
+        <input type="text" id="states" class="states__input" placeholder="e.g. CA or NY, NJ, CT"
+               autocomplete="off" spellcheck="false" aria-describedby="states-status" />
+        <p id="states-status" class="states__status" aria-live="polite"></p>
+      </div>
+    </div>
     <p id="status" class="status" aria-live="polite"></p>
   </main>
+  <script src="../lib/listings.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>
