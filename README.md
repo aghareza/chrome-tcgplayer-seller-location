@@ -24,7 +24,8 @@ single-page app: clicking into a product from search changes the URL without a p
 
 The fetch happens from the page itself (same origin, same user-agent as the site), so it behaves
 like the site's own requests. It works because the API allows CORS from `www.tcgplayer.com`;
-in Manifest V3, `host_permissions` does not lift CORS for content scripts.
+in Manifest V3, `host_permissions` does not lift CORS for content scripts, so the extension
+requests none (its only permission is `storage`, for the on/off toggle).
 
 ## Install (unpacked)
 
