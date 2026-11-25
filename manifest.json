@@ -5,7 +5,7 @@
   "description": "Shows the city and state of each seller next to their name in the listings on a TCGPlayer product page.",
   "action": {
     "default_title": "Toggle seller location",
-    "default_popup": "popup.html",
+    "default_popup": "src/popup/popup.html",
     "default_icon": {
       "16": "icons/icon16.png",
       "48": "icons/icon48.png",
@@ -23,11 +23,11 @@
         "https://www.tcgplayer.com/*"
       ],
       "js": [
-        "listings.js",
-        "content.js"
+        "src/lib/listings.js",
+        "src/content/content.js"
       ],
       "css": [
-        "content.css"
+        "src/content/content.css"
       ],
       "run_at": "document_idle"
     }
